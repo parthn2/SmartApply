@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Storage Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .section-header h2 {
+            color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .json-viewer {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detail-view {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .detail-item {
+            margin-bottom: 10px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+            display: inline-block;
+            width: 150px;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Admin Dashboard</h1>
+            <p>In-Memory Storage Viewer</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalApplications">-</div>
+                <div class="stat-label">Total Applications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalSessions">-</div>
+                <div class="stat-label">Interview Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalEvaluations">-</div>
+                <div class="stat-label">Completed Evaluations</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="button-group">
+                <button onclick="loadData()">🔄 Refresh Data</button>
+                <button class="secondary" onclick="viewRawJSON()">📋 View Raw JSON</button>
+                <button class="danger" onclick="resetStorage()">🗑️ Clear All Storage</button>
+            </div>
+
+            <!-- Applications Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2>📄 Job Applications</h2>
+                    <span class="badge badge-info" id="appCount">0 items</span>
+                </div>
+                <div id="applicationsContainer">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
+            <!-- Interview Sessions Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2>🎤 Interview Sessions</h2>
+                    <span class="badge badge-info" id="sessionCount">0 items</span>
+                </div>
+                <div id="sessionsContainer">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
+            <!-- Raw JSON Viewer -->
+            <div class="section" id="rawJsonSection" style="display: none;">
+                <div class="section-header">
+                    <h2>📋 Raw JSON Data</h2>
+                    <button class="secondary" onclick="closeRawJSON()">Close</button>
+                </div>
+                <div class="json-viewer" id="rawJsonViewer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let storageData = null;
+
+        // Load data on page load
+        window.addEventListener('load', loadData);
+
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/storage`);
+                storageData = await response.json();
+                
+                updateStats(storageData);
+                displayApplications(storageData.applications);
+                displaySessions(storageData.interview_sessions);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Failed to load data. Make sure the server is running.');
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalApplications').textContent = data.summary.total_applications;
+            document.getElementById('totalSessions').textContent = data.summary.total_interview_sessions;
+            document.getElementById('totalEvaluations').textContent = data.summary.applications_with_evaluations;
+        }
+
+        function displayApplications(applications) {
+            const container = document.getElementById('applicationsContainer');
+            document.getElementById('appCount').textContent = `${applications.count} items`;
+
+            if (applications.count === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No applications submitted yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Position</th>
+                            <th>Resume</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            applications.data.forEach(app => {
+                const hasResume = app.resume_path !== undefined;
+                html += `
+                    <tr>
+                        <td><span class="badge badge-info">${app.application_id}</span></td>
+                        <td>${app.full_name}</td>
+                        <td>${app.email}</td>
+                        <td>${app.position}</td>
+                        <td>${app.resume_filename}</td>
+                        <td>${new Date(app.submitted_at).toLocaleString()}</td>
+                        <td>
+                            <button onclick="viewApplicationDetails('${app.application_id}')" 
+                                    style="padding: 5px 10px; margin: 2px;">
+                                View
+                            </button>
+                            ${hasResume ? `
+                                <button onclick="downloadResume('${app.application_id}')" 
+                                        style="padding: 5px 10px; margin: 2px;">
+                                    📎 Resume
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function displaySessions(sessions) {
+            const container = document.getElementById('sessionsContainer');
+            document.getElementById('sessionCount').textContent = `${sessions.count} items`;
+
+            if (sessions.count === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No interview sessions yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div>';
+
+            Object.entries(sessions.data).forEach(([sessionId, session]) => {
+                const hasEvaluation = session.evaluation !== undefined;
+                const numQuestions = session.questions ? session.questions.length : 0;
+                
+                html += `
+                    <div class="detail-view" onclick="showSessionDetails('${sessionId}')" style="cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Session: ${sessionId}</strong>
+                                <span class="badge badge-info">${session.position}</span>
+                                ${hasEvaluation ? '<span class="badge badge-success">✓ Evaluated</span>' : '<span class="badge badge-warning">Pending</span>'}
+                            </div>
+                            <div>
+                                <strong>${numQuestions} Questions</strong>
+                            </div>
+                        </div>
+                        ${hasEvaluation ? `
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                <strong>Score: ${session.evaluation.overall_score}/100</strong> | 
+                                Recommendation: <strong>${session.evaluation.recommendation.toUpperCase()}</strong>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function showApplicationDetails(appId) {
+            const app = storageData.applications.data.find(a => a.application_id === appId);
+            if (!app) return;
+
+            const details = `
+Application ID: ${app.application_id}
+Full Name: ${app.full_name}
+Email: ${app.email}
+Phone: ${app.phone}
+Position: ${app.position}
+Resume: ${app.resume_filename} (${app.resume_size} bytes)
+Cover Letter: ${app.cover_letter || 'Not provided'}
+Submitted: ${new Date(app.submitted_at).toLocaleString()}
+            `;
+
+            alert(details);
+        }
+
+        function viewApplicationDetails(appId) {
+            const app = storageData.applications.data.find(a => a.application_id === appId);
+            if (!app) return;
+
+            const details = `
+Application ID: ${app.application_id}
+Full Name: ${app.full_name}
+Email: ${app.email}
+Phone: ${app.phone}
+Position: ${app.position}
+Resume: ${app.resume_filename} (${app.resume_size} bytes)
+${app.resume_path ? 'Resume Path: ' + app.resume_path : ''}
+Cover Letter: ${app.cover_letter || 'Not provided'}
+Submitted: ${new Date(app.submitted_at).toLocaleString()}
+            `;
+
+            alert(details);
+        }
+
+        function downloadResume(appId) {
+            // Open resume download in new tab
+            const downloadUrl = `${API_BASE_URL}/api/applications/${appId}/resume`;
+            window.open(downloadUrl, '_blank');
+        }
+
+        function showSessionDetails(sessionId) {
+            const session = storageData.interview_sessions.data[sessionId];
+            if (!session) return;
+
+            let details = `Session ID: ${sessionId}\nPosition: ${session.position}\n\n`;
+            
+            if (session.questions) {
+                details += `Questions (${session.questions.length}):\n`;
+                session.questions.forEach(q => {
+                    details += `\nQ${q.question_id}: ${q.question}\n`;
+                });
+            }
+
+            if (session.evaluation) {
+                details += `\n\nEVALUATION RESULTS:\n`;
+                details += `Overall Score: ${session.evaluation.overall_score}/100\n`;
+                details += `Recommendation: ${session.evaluation.recommendation}\n`;
+                details += `Summary: ${session.evaluation.summary}\n`;
+            }
+
+            alert(details);
+        }
+
+        function viewRawJSON() {
+            document.getElementById('rawJsonSection').style.display = 'block';
+            document.getElementById('rawJsonViewer').textContent = JSON.stringify(storageData, null, 2);
+        }
+
+        function closeRawJSON() {
+            document.getElementById('rawJsonSection').style.display = 'none';
+        }
+
+        async function resetStorage() {
+            if (!confirm('Are you sure you want to clear all storage? This cannot be undone!')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/storage/reset`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                alert(`Storage cleared!\nApplications removed: ${result.cleared.applications}\nSessions removed: ${result.cleared.sessions}`);
+                
+                loadData();
+            } catch (error) {
+                console.error('Error resetting storage:', error);
+                alert('Failed to reset storage.');
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
